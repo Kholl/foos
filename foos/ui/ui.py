@@ -210,6 +210,7 @@ class Gui():
         self.__setup_menu()
         self.__setup_sprites()
         self.schedules = []
+        self.message = None
 
     def __event_map(self):
         evnt = {'quit': lambda d: self.stop(),
@@ -235,7 +236,8 @@ class Gui():
                 "win_game": self._win_game,
                 "countdown": lambda d: setattr(self, 'countdown', d['end_time']),
                 "sudden_death": self.__sudden_death,
-                "timeout_close": lambda d: self.__flash_once_yellow()}
+                "timeout_close": lambda d: self.__flash_once_yellow(),
+                "message": lambda d: self.showMessage(d['msg'])}
 
         if config.show_instructions:
             evnt["increment_score"] = lambda d: self.instructions.show()
@@ -364,6 +366,11 @@ class Gui():
         self.game_mode_ui = ChangingText(flat, font=font, string=self.__get_mode_string(None),
                                          is_3d=False, justify='R', x=920, y=480, z=50)
 
+        message_text = ChangingText(flat, font=font, string=self.__get_message_string(None),
+                                              is_3d=False, justify='C', x=920, y=420, z=50)
+
+        self.game_message = Disappear(message_text, duration=1, fade=0.5, alpha=1)
+
         self.feedback = KeysFeedback(flat)
 
         s = 512
@@ -444,6 +451,12 @@ class Gui():
 
         return (mode + " " + timestr).rjust(l)
 
+    def __get_message_string(self):
+        if self.message is None:
+            return ""
+
+        return self.message;
+
     def getPlayers(self, players=[], points=[], left=True):
         l = 20
         if len(players) == 0:
@@ -459,6 +472,10 @@ class Gui():
     def setPlayers(self, black, yellow, black_points, yellow_points):
         self.yPlayers.quick_change(self.getPlayers(yellow, points=yellow_points, left=True))
         self.bPlayers.quick_change(self.getPlayers(black, points=black_points, left=False))
+
+    def showMessage(self, message):
+        self.message = message
+        self.game_message.show()
 
     def schedule(self, when, fun, unique=False):
         if unique:
@@ -494,6 +511,8 @@ class Gui():
                 self.people.draw()
                 self.yCounter.draw()
                 self.bCounter.draw()
+                self.game_message.draw()
+
                 if not self.overlay_mode:
                     self.winner.draw()
                     self.game_mode_ui.quick_change(self.__get_mode_string())
